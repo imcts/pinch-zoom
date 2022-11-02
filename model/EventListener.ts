@@ -3,9 +3,11 @@ import Listener from './abstract/Listener';
 import Pointer from './vo/Pointer';
 import Pointers from './Pointers';
 import VelocityTracker from './VelocityTracker';
+import Scale from "./vo/Scale";
 
 export default class EventListener {
   private static readonly MAXIMUM_FINGER = 2;
+  private static readonly WHEEL_DIVIDER = 500;
 
   public static of(wrapper: HTMLElement, listener: Listener) {
     return new EventListener(wrapper, listener);
@@ -26,7 +28,9 @@ export default class EventListener {
       ['move', (e) => this.move(e)],
       ['end', (e) => this.end(e)],
     ]);
-    this.wheelEvent = LinkedHashMap.from([['wheel', (e) => this.wheel(e)]]);
+    this.wheelEvent = LinkedHashMap.from([
+      ['wheel', (e) => this.wheel(e as WheelEvent)],
+    ]);
     this.current = LinkedHashMap.new();
     this.last = LinkedHashMap.new();
     this.tracker = VelocityTracker.from(this);
@@ -89,8 +93,8 @@ export default class EventListener {
     return this.last.getSize() || this.current.getSize();
   }
 
-  private wheel(e: Event) {
-    console.log('wheel: ', e);
+  private wheel(e: WheelEvent) {
+    this.listener.wheel(Scale.from(1 - e.deltaY / EventListener.WHEEL_DIVIDER));
   }
 
   public run() {

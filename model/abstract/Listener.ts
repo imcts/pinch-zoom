@@ -1,9 +1,12 @@
 import Pointer from '../vo/Pointer';
 import Pointers from '../Pointers';
+import Scale from "../vo/Scale";
 import Velocity from '../vo/Velocity';
 
 export default interface Listener {
   start(pointer: Pointer): void;
   move(pointers: Pointers): void;
   end(pointer: Pointer, velocity: Velocity): void;
+  wheel(changed: Scale): void;
 }
+

@@ -8,7 +8,6 @@ import Pointer from './vo/Pointer';
 import Scale from './vo/Scale';
 import Time from './vo/Time';
 import Velocity from './vo/Velocity';
-
 export default class PinchZoom implements Listener {
   private readonly event: EventListener;
   private readonly limit: Limit;
@@ -42,9 +41,9 @@ export default class PinchZoom implements Listener {
     const newScale = scale.multiply(changedScale);
     this.render(
       pointer
-        .plus(pointers.getChangedDistancePointer())
-        .minus(this.getParallelPointer(pointers, changedScale))
-        .bound(this.limit),
+      .plus(pointers.getChangedDistancePointer())
+      .minus(this.getParallelPointer(pointers, changedScale))
+      .bound(this.limit),
       newScale,
     );
   }
@@ -126,6 +125,11 @@ export default class PinchZoom implements Listener {
       }
     };
     this.animator = requestAnimationFrame(f);
+  }
+
+  public wheel(changed: Scale) {
+    const { scale, pointer } = this.getCurrentStatus();
+    this.render(pointer, scale.multiply(changed));
   }
 
   public clear() {
