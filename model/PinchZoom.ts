@@ -127,9 +127,16 @@ export default class PinchZoom implements Listener {
     this.animator = requestAnimationFrame(f);
   }
 
-  public wheel(changed: Scale) {
+  public wheel(pointers: Pointers, changedScale: Scale) {
     const { scale, pointer } = this.getCurrentStatus();
-    this.render(pointer, scale.multiply(changed));
+    const newScale = scale.multiply(changedScale);
+    this.render(
+      pointer
+      .plus(pointers.getChangedDistancePointer())
+      .minus(this.getParallelPointer(pointers, changedScale))
+      .bound(this.limit),
+      newScale,
+    );
   }
 
   public clear() {

@@ -7,6 +7,6 @@ export default interface Listener {
   start(pointer: Pointer): void;
   move(pointers: Pointers): void;
   end(pointer: Pointer, velocity: Velocity): void;
-  wheel(changed: Scale): void;
+  wheel(pointers: Pointers, changed: Scale): void;
 }
 

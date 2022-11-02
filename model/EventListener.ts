@@ -94,7 +94,13 @@ export default class EventListener {
   }
 
   private wheel(e: WheelEvent) {
-    this.listener.wheel(Scale.from(1 - e.deltaY / EventListener.WHEEL_DIVIDER));
+    const pointers = Pointers.new();
+    const pointer = Pointer.value(e.x, e.y);
+    pointers.append(pointer, pointer);
+    this.listener.wheel(
+      pointers,
+      Scale.from(1 - e.deltaY / EventListener.WHEEL_DIVIDER),
+    );
   }
 
   public run() {
