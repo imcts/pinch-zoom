@@ -8,6 +8,7 @@ import Pointer from './vo/Pointer';
 import Scale from './vo/Scale';
 import Time from './vo/Time';
 import Velocity from './vo/Velocity';
+
 export default class PinchZoom implements Listener {
   private readonly event: EventListener;
   private readonly limit: Limit;
@@ -31,10 +32,24 @@ export default class PinchZoom implements Listener {
     this.cancelAnimation();
   }
 
+  /**
+   * @information
+   *  - 현재 진행중인 애니메이션이 있다면 취소 합니다.
+   */
   private cancelAnimation() {
     cancelAnimationFrame(this.animator);
   }
 
+  /**
+   * @param pointers: 사용자가 이전에 터치한 위치 정보들과, 현재 이동한 위치 정보들을 담고 있습니다.
+   * @information
+   *  - content의 현재 확대정보와, 위치정보를 구합니다.
+   *  - pointers에서 사용자가 변경한 Scale정보를 얻고, 기존 Scale과 곱하여 변경될 Scale을 구합니다.
+   *  - 사용자가 이동한 위치들의 중점의 위치를 구하고, 현재 위치에 더합니다.
+   *  - 사용자가 변경한 위치들과, 변경한 확대 비율 정보로 평행 이동해야 하는 위치를 구합니다.
+   *  - 평행 이동해야 하는 위치를 현재 위치에서 빼주어서, 줌 인/아웃 시 한 지점에서 머무르도록 합니다.
+   *  - 사용자가 화면을 드래그 시 wrapper를 벗어나지 않도록 바운딩 처리를 합니다.
+   */
   public move(pointers: Pointers) {
     const { scale, pointer } = this.getCurrentStatus();
     const changedScale = pointers.getChangedScale();
@@ -48,6 +63,9 @@ export default class PinchZoom implements Listener {
     );
   }
 
+  /**
+   * @see: https://developer.mozilla.org/en-US/docs/Web/CSS/transform#syntax
+   */
   private getCurrentStatus() {
     const style = window.getComputedStyle(this.content);
     const matrix =
@@ -98,6 +116,15 @@ export default class PinchZoom implements Listener {
     this.content.style.transform = `translate(${x}px, ${y}px) scale(${ratio})`;
   }
 
+  /**
+   * @param last: 사용자가 마지막에 이동시킨 포인터 입니다.
+   * @param velocity: 사용자가 드래그 중에 발생시킨 속도 입니다.
+   * @information
+   *  - 드래그 가능한 상태가 아니라면 무시 합니다.
+   *  - 사용자가 마지막에 이동시킨 거리와 속도를 기반으로 관성 이동 해야 할 거리를 구합니다.
+   *  - 구해진 관성 이동 거리에 바운딩 처리를 하여 최종 이동할 거리를 구합니다.
+   *  - 현재 위치에 관성이동 위치를 더해주고 애니메이션을 수행 합니다.
+   */
   public end(last: Pointer, velocity: Velocity) {
     if (!this.limit.isAvailableKinect()) {
       return;
@@ -110,6 +137,13 @@ export default class PinchZoom implements Listener {
     this.animate(kinetic, pointer.plus(kinetic), scale);
   }
 
+  /**
+   * @information
+   *  - 애니메이션 시작 시간을 기록 합니다.
+   *  - 경과 시간을 기준으로 오일러 상수에 지수연산을 수행하여 관성이동할 비율을 구합니다.
+   *  - 관성 이동을 할 수 있다면 이동할 수 있는 거리만큼 화면을 렌더링 하고, 다시 애니메이션 함수를 수행 합니다.
+   *  - 경과 시간으로 구한 관성이동 비율이 최소치에 다다랐다면, 목적지 좌표로 렌더링하고 애니메이션을 종료 합니다.
+   */
   private animate(kinetic: Pointer, destination: Pointer, scale: Scale) {
     const startTime = Time.now();
     const f = () => {

@@ -15,6 +15,11 @@ export default class Velocity {
     public readonly velocityY: number,
   ) {}
 
+  /**
+   * @information
+   *  - 속도 = 거리 / 시간
+   *  - 사용자가 이동한 거리와, 경과한 시간을 전달받아 속도를 구하고 반환 합니다.
+   */
   public track({ x, y }: Pointer, { time }: Time) {
     return Velocity.of(
       this.getVelocity(Math.abs(x), this.velocityX, time),
@@ -23,7 +28,7 @@ export default class Velocity {
   }
 
   /**
-   * @information: https://en.wikipedia.org/wiki/Moving_average
+   * @see: https://en.wikipedia.org/wiki/Moving_average
    */
   private getVelocity(v1: number, v2: number, time: number) {
     return 0.8 * (v1 / time) + 0.2 * v2;

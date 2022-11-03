@@ -10,6 +10,10 @@ export default class Limit {
     private readonly content: HTMLElement,
   ) {}
 
+  /**
+   * @information
+   *  - 컨텐츠가 이동할 수 있는 최대 좌표값을 반환 합니다.
+   */
   public getBoundaryPointer() {
     const { wrapper, content } = this.getBoundingClientRects();
     return Pointer.value(
@@ -34,6 +38,10 @@ export default class Limit {
     );
   }
 
+  /**
+   * @information
+   *  - 컨텐츠가 래퍼보다 커야만 x축, y축으로 이동할 수 있습니다.
+   */
   public isDraggable() {
     const { wrapper, content } = this.getBoundingClientRects();
     return {
@@ -42,6 +50,10 @@ export default class Limit {
     };
   }
 
+  /**
+   * @information
+   *  - 관성 이동은 어느 방향으로든 컨텐츠가 이동할 수 있어야 합니다.
+   */
   public isAvailableKinect() {
     const { x, y } = this.isDraggable();
     return x || y;

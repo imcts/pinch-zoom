@@ -50,6 +50,18 @@ export default class Pointer {
     return Pointer.of(this.id, this.x - x, this.y - y);
   }
 
+  /**
+   * @param kinetic: 사용자가 마지막으로 이동한 거리를 기반으로한 관성 이동할 거리 입니다.
+   * @param limit: 제약 조건을 담당하는 객체 입니다.
+   *
+   * @information
+   *  - 현재 위치에 관성 거리를 더하여 목적지를 구합니다.
+   *  - 리미트 객체로부터 바운더리를 구합니다.
+   *  - 리미트 객체로부터 드래그 할 수 있는지 여부를 구합니다.
+   *  - 드래그 할 수 없다면, 좌표값은 기본값으로 설정 합니다.
+   *  - 바운더리 위치에 제한된다면, 관성 이동 되어야 하는 거리는 현재 위치에서 바운더리 까지 입니다.
+   *  - 바운더리 위치에 제한되지 않는다면 관성 이동 거리를 반환 합니다.
+   */
   public getBoundedKineticPointer(kinetic: Pointer, limit: Limit) {
     const destination = this.plus(kinetic);
     const boundary = limit.getBoundaryPointer();

@@ -1,7 +1,4 @@
 export default class Time {
-  /**
-   * @information: https://developer.apple.com/documentation/uikit/uiscrollview#/apple_ref/doc/c_ref/UIScrollViewDecelerationRateNormal
-   */
   private static readonly KINETIC_TIME = 325;
   private static readonly MINIMUM_FACTOR = 0.01;
 
@@ -27,6 +24,9 @@ export default class Time {
     return 1 + Date.now() - this.time;
   }
 
+  /**
+   * @see: https://developer.apple.com/documentation/uikit/uiscrollview#/apple_ref/doc/c_ref/UIScrollViewDecelerationRateNormal
+   */
   public getElapsedFactor() {
     return Math.exp(-this.getElapsedTime() / Time.KINETIC_TIME);
   }
