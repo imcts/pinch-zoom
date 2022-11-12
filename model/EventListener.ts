@@ -1,5 +1,5 @@
 import LinkedHashMap from './collection/LinkedHashMap';
-import Listener from './abstract/Listener';
+import Renderer from './abstract/Renderer';
 import Pointer from './vo/Pointer';
 import Pointers from './Pointers';
 import VelocityTracker from './VelocityTracker';
@@ -9,8 +9,8 @@ export default class EventListener {
   private static readonly MAXIMUM_FINGER = 2;
   private static readonly WHEEL_DIVIDER = 500;
 
-  public static of(wrapper: HTMLElement, listener: Listener) {
-    return new EventListener(wrapper, listener);
+  public static of(wrapper: HTMLElement, renderer: Renderer) {
+    return new EventListener(wrapper, renderer);
   }
 
   private readonly touchEvent: LinkedHashMap<string, (e: TouchEvent) => void>;
@@ -22,7 +22,7 @@ export default class EventListener {
 
   private constructor(
     private readonly wrapper: HTMLElement,
-    private readonly listener: Listener,
+    private readonly renderer: Renderer,
   ) {
     this.touchEvent = LinkedHashMap.from([
       ['start', (e) => this.start(e)],
@@ -53,7 +53,7 @@ export default class EventListener {
         break;
       }
       if (!this.isTouching()) {
-        this.listener.start();
+        this.renderer.start();
       }
       const pointer = Pointer.touch(touch);
       const { id } = pointer;
@@ -96,7 +96,7 @@ export default class EventListener {
     if (pointers.isEmpty()) {
       return;
     }
-    this.listener.move(pointers);
+    this.renderer.move(pointers);
   }
 
   /**
@@ -118,7 +118,7 @@ export default class EventListener {
     if (this.isTouching()) {
       return;
     }
-    this.listener.end(last, this.tracker.halt());
+    this.renderer.end(last, this.tracker.halt());
   }
 
   public getLastMovedPointer() {
@@ -143,7 +143,7 @@ export default class EventListener {
     const pointers = Pointers.new();
     const pointer = Pointer.value(e.x, e.y);
     pointers.append(pointer, pointer);
-    this.listener.wheel(
+    this.renderer.wheel(
       pointers,
       Scale.from(1 - e.deltaY / EventListener.WHEEL_DIVIDER),
     );

@@ -1,6 +1,6 @@
 import LinkedHashMap from "./collection/LinkedHashMap";
 import EventListener from './EventListener';
-import Listener from './abstract/Listener';
+import Renderer from './abstract/Renderer';
 import Pointers from './Pointers';
 import Limit from './vo/Limit';
 import NonePointer from './vo/NonePointer';
@@ -11,7 +11,7 @@ import Time from './vo/Time';
 import Velocity from './vo/Velocity';
 
 
-export default class PinchZoom implements Listener {
+export default class PinchZoom implements Renderer {
   private readonly event: EventListener;
   private readonly limit: Limit;
   private readonly reached: LinkedHashMap<string, boolean>;
