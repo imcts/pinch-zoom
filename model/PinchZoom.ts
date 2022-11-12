@@ -1,3 +1,4 @@
+import LinkedHashMap from "./collection/LinkedHashMap";
 import EventListener from './EventListener';
 import Listener from './abstract/Listener';
 import Pointers from './Pointers';
@@ -8,6 +9,7 @@ import Pointer from './vo/Pointer';
 import Scale from './vo/Scale';
 import Time from './vo/Time';
 import Velocity from './vo/Velocity';
+
 
 export default class PinchZoom implements Listener {
   private readonly event: EventListener;
@@ -22,8 +24,10 @@ export default class PinchZoom implements Listener {
     this.event = EventListener.of(wrapper, this);
     this.limit = Limit.of(wrapper, content);
     this.reached = LinkedHashMap.from([
-      ['top', false],
-      ['left', false],
+      ['move-left', false],
+      ['move-right', false],
+      ['end-right', false],
+      ['end-right', false],
     ]);
     this.animator = 0;
   }
@@ -40,11 +44,17 @@ export default class PinchZoom implements Listener {
 
   private updateReached() {
     const {
+      scale,
       pointer: { x },
     } = this.getCurrentStatus();
     const limit = this.limit.getBoundaryPointer();
-    this.reached.set('left', x === limit.x);
-    this.reached.set('right', x === -limit.x);
+    const reachedLeft = x === limit.x;
+    const reachedRight = x === -limit.x;
+    const noMinimum = !scale.isMinimum();
+    this.reached.set('move-left', reachedLeft);
+    this.reached.set('move-right', reachedRight);
+    this.reached.set('end-left', noMinimum && reachedLeft);
+    this.reached.set('end-right', noMinimum && reachedRight);
   }
 
   /**
@@ -70,7 +80,6 @@ export default class PinchZoom implements Listener {
     const changedScale = pointers.getChangedScale();
     const changedPointer = pointers.getChangedDistancePointer();
     const newScale = scale.multiply(changedScale);
-    this.expireReachedEvent(changedPointer);
     this.render(
       pointer
       .plus(changedPointer)
@@ -78,18 +87,49 @@ export default class PinchZoom implements Listener {
       .bound(this.limit),
       newScale,
     );
+    this.expireMoveEvent(newScale, changedPointer);
   }
 
-  private expireReachedEvent(pointer: Pointer) {
-    if (this.event.isSingleTouch()) {
-      if (this.reached.get('left') && pointer.isLeft()) {
-        console.log('left');
-      } else if (this.reached.get('right') && pointer.isRight()) {
-        console.log('right');
-      }
+  private expireMoveEvent(scale: Scale, pointer: Pointer) {
+    if (this.isReachedLeftAtMove(scale, pointer)) {
+      console.log('move left');
+    } else if (this.isReachedRightAtMove(scale, pointer)) {
+      console.log('move right');
     }
-    this.reached.set('left', false);
-    this.reached.set('right', false);
+    this.validateOppositeMoving(pointer);
+    this.clearReachedAtMove();
+  }
+
+  private isReachedLeftAtMove(scale: Scale, pointer: Pointer) {
+    return (
+      this.event.isSingleTouch() &&
+      scale.isMinimum() &&
+      this.reached.get('move-left') &&
+      pointer.isLeft()
+    );
+  }
+
+  private isReachedRightAtMove(scale: Scale, pointer: Pointer) {
+    return (
+      this.event.isSingleTouch() &&
+      scale.isMinimum() &&
+      this.reached.get('move-right') &&
+      pointer.isRight()
+    );
+  }
+
+  private validateOppositeMoving(pointer: Pointer) {
+    if (this.reached.get('end-left') && pointer.isRight()) {
+      this.reached.set('end-left', false);
+    }
+    if (this.reached.get('end-right') && pointer.isLeft()) {
+      this.reached.set('end-right', false);
+    }
+  }
+
+  private clearReachedAtMove() {
+    this.reached.set('move-left', false);
+    this.reached.set('move-right', false);
   }
 
   /**
@@ -159,15 +199,48 @@ export default class PinchZoom implements Listener {
       console.log('tab');
       return;
     }
-    if (!this.limit.isAvailableKinect()) {
-      return;
-    }
     const { scale, pointer } = this.getCurrentStatus();
     const kinetic = pointer.getBoundedKineticPointer(
       last.getKineticPointer(velocity),
       this.limit,
     );
+    this.expireEndEvent(scale, kinetic, last);
+    if (!this.limit.isAvailableKinect()) {
+      return;
+    }
     this.animate(kinetic, pointer.plus(kinetic), scale);
+  }
+
+  private expireEndEvent(scale: Scale, kinetic: Pointer, last: Pointer) {
+    if (this.isReachedLeftAtEnd(scale, kinetic, last)) {
+      console.log('end left');
+    } else if (this.isReachedRightAtEnd(scale, kinetic, last)) {
+      console.log('end right');
+    }
+    this.clearReachedAtEnd();
+  }
+
+  private isReachedLeftAtEnd(scale: Scale, kinetic: Pointer, last: Pointer) {
+    return (
+      !scale.isMinimum() &&
+      this.reached.get('end-left') &&
+      kinetic.isReachedEndOfLandscape() &&
+      last.isLeft()
+    );
+  }
+
+  private isReachedRightAtEnd(scale: Scale, kinetic: Pointer, last: Pointer) {
+    return (
+      !scale.isMinimum() &&
+      this.reached.get('end-right') &&
+      kinetic.isReachedEndOfLandscape() &&
+      last.isRight()
+    );
+  }
+
+  private clearReachedAtEnd() {
+    this.reached.set('end-left', false);
+    this.reached.set('end-right', false);
   }
 
   /**

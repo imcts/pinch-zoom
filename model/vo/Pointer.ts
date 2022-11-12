@@ -156,6 +156,10 @@ export default class Pointer {
     return !this.x && !this.y;
   }
 
+  public isReachedEndOfLandscape() {
+    return !this.x;
+  }
+
   public isLeft() {
     return this.isLandscape() && this.x > 0;
   }

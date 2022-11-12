@@ -18,4 +18,8 @@ export default class Scale {
   private isLessThanMinimum(ratio: number) {
     return ratio < Scale.MINIMUM_RATIO;
   }
+
+  public isMinimum() {
+    return this.ratio === Scale.MINIMUM_RATIO;
+  }
 }

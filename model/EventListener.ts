@@ -5,7 +5,6 @@ import Pointers from './Pointers';
 import VelocityTracker from './VelocityTracker';
 import Scale from "./vo/Scale";
 
-
 export default class EventListener {
   private static readonly MAXIMUM_FINGER = 2;
   private static readonly WHEEL_DIVIDER = 500;
@@ -110,7 +109,7 @@ export default class EventListener {
    */
   private end(e: TouchEvent) {
     this.updateFingerCount(e);
-    const pointers = this.getPointers();
+    const last = this.getLastMovedPointer();
     for (const touch of Array.from(e.changedTouches)) {
       const { id } = Pointer.touch(touch);
       this.last.delete(id);
@@ -119,10 +118,15 @@ export default class EventListener {
     if (this.isTouching()) {
       return;
     }
-    this.listener.end(
-      pointers.getChangedDistancePointer(),
-      this.tracker.halt(),
-    );
+    this.listener.end(last, this.tracker.halt());
+  }
+
+  public getLastMovedPointer() {
+    const pointers = Pointers.new();
+    this.last.forEachPair(this.current, (last, current) => {
+      pointers.append(last, current);
+    });
+    return pointers.getChangedDistancePointer();
   }
 
   private isTouching() {
@@ -192,18 +196,6 @@ export default class EventListener {
     this.last.clear();
     this.current.clear();
     this.tracker.clear();
-  }
-
-  public getLastMovedPointer() {
-    return this.getPointers().getChangedDistancePointer();
-  }
-
-  private getPointers() {
-    const pointers = Pointers.new();
-    this.last.forEachPair(this.current, (last, current) => {
-      pointers.append(last, current);
-    });
-    return pointers;
   }
 
   public isSingleTouch() {
