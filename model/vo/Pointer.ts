@@ -9,7 +9,7 @@ interface Data {
 
 export default class Pointer {
   private static readonly KINETIC_DISTANCE = 100;
-  private static readonly KINETIC_FRICTION = 0.7;
+  private static readonly KINETIC_FRICTION = 0.6;
   private static readonly DEFAULT_POINTER = 0;
 
   public static touch(data: Data) {
@@ -150,5 +150,21 @@ export default class Pointer {
       coordinate = -boundary;
     }
     return coordinate;
+  }
+
+  public isEmpty() {
+    return !this.x && !this.y;
+  }
+
+  public isLeft() {
+    return this.isLandscape() && this.x > 0;
+  }
+
+  private isLandscape() {
+    return Math.abs(this.x) > Math.abs(this.y);
+  }
+
+  public isRight() {
+    return this.isLandscape() && this.x < 0;
   }
 }

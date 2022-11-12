@@ -19,6 +19,7 @@ export default class EventListener {
   private readonly last: LinkedHashMap<number, Pointer>;
   private readonly current: LinkedHashMap<number, Pointer>;
   private readonly tracker: VelocityTracker;
+  private fingerCount: number;
 
   private constructor(
     private readonly wrapper: HTMLElement,
@@ -35,6 +36,7 @@ export default class EventListener {
     this.current = LinkedHashMap.new();
     this.last = LinkedHashMap.new();
     this.tracker = VelocityTracker.from(this);
+    this.fingerCount = 0;
   }
 
   /**
@@ -46,17 +48,24 @@ export default class EventListener {
    *  - 이벤트 구독자의 start 메서드에 현재 터치된 포인터를 전달 합니다.
    */
   private start(e: TouchEvent) {
+    this.updateFingerCount(e);
     for (const touch of Array.from(e.changedTouches)) {
       if (this.isMaximumTouchedFinger()) {
         break;
+      }
+      if (!this.isTouching()) {
+        this.listener.start();
       }
       const pointer = Pointer.touch(touch);
       const { id } = pointer;
       this.last.set(id, pointer);
       this.current.set(id, pointer);
       this.tracker.track();
-      this.listener.start(pointer);
     }
+  }
+
+  private updateFingerCount(e: TouchEvent) {
+    this.fingerCount = e.touches.length;
   }
 
   private isMaximumTouchedFinger() {
@@ -75,16 +84,16 @@ export default class EventListener {
    */
   private move(e: TouchEvent) {
     const pointers = Pointers.new();
-    for (const touch of Array.from(e.changedTouches)) {
+    Array.from(e.changedTouches).forEach((touch) => {
       const changed = Pointer.touch(touch);
       const current = this.current.get(changed.id);
       if (!current) {
-        continue;
+        return;
       }
       pointers.append(current, changed);
       this.last.set(current.id, current);
       this.current.set(changed.id, changed);
-    }
+    });
     if (pointers.isEmpty()) {
       return;
     }
@@ -100,6 +109,7 @@ export default class EventListener {
    *  - 이벤트 구독자의 end메서드를 호출하고 저장하고 있던 마지막 위치 정보들을 전달 합니다.
    */
   private end(e: TouchEvent) {
+    this.updateFingerCount(e);
     const pointers = this.getPointers();
     for (const touch of Array.from(e.changedTouches)) {
       const { id } = Pointer.touch(touch);
@@ -194,5 +204,9 @@ export default class EventListener {
       pointers.append(last, current);
     });
     return pointers;
+  }
+
+  public isSingleTouch() {
+    return this.fingerCount === 1;
   }
 }

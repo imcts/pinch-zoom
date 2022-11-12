@@ -12,6 +12,7 @@ import Velocity from './vo/Velocity';
 export default class PinchZoom implements Listener {
   private readonly event: EventListener;
   private readonly limit: Limit;
+  private readonly reached: LinkedHashMap<string, boolean>;
   private animator: number;
 
   public constructor(
@@ -20,6 +21,10 @@ export default class PinchZoom implements Listener {
   ) {
     this.event = EventListener.of(wrapper, this);
     this.limit = Limit.of(wrapper, content);
+    this.reached = LinkedHashMap.from([
+      ['top', false],
+      ['left', false],
+    ]);
     this.animator = 0;
   }
 
@@ -30,6 +35,16 @@ export default class PinchZoom implements Listener {
 
   public start() {
     this.cancelAnimation();
+    this.updateReached();
+  }
+
+  private updateReached() {
+    const {
+      pointer: { x },
+    } = this.getCurrentStatus();
+    const limit = this.limit.getBoundaryPointer();
+    this.reached.set('left', x === limit.x);
+    this.reached.set('right', x === -limit.x);
   }
 
   /**
@@ -53,14 +68,28 @@ export default class PinchZoom implements Listener {
   public move(pointers: Pointers) {
     const { scale, pointer } = this.getCurrentStatus();
     const changedScale = pointers.getChangedScale();
+    const changedPointer = pointers.getChangedDistancePointer();
     const newScale = scale.multiply(changedScale);
+    this.expireReachedEvent(changedPointer);
     this.render(
       pointer
-      .plus(pointers.getChangedDistancePointer())
+      .plus(changedPointer)
       .minus(this.getParallelPointer(pointers, changedScale))
       .bound(this.limit),
       newScale,
     );
+  }
+
+  private expireReachedEvent(pointer: Pointer) {
+    if (this.event.isSingleTouch()) {
+      if (this.reached.get('left') && pointer.isLeft()) {
+        console.log('left');
+      } else if (this.reached.get('right') && pointer.isRight()) {
+        console.log('right');
+      }
+    }
+    this.reached.set('left', false);
+    this.reached.set('right', false);
   }
 
   /**
@@ -126,6 +155,10 @@ export default class PinchZoom implements Listener {
    *  - 현재 위치에 관성이동 위치를 더해주고 애니메이션을 수행 합니다.
    */
   public end(last: Pointer, velocity: Velocity) {
+    if (last.isEmpty()) {
+      console.log('tab');
+      return;
+    }
     if (!this.limit.isAvailableKinect()) {
       return;
     }
@@ -156,6 +189,7 @@ export default class PinchZoom implements Listener {
         this.animator = requestAnimationFrame(f);
       } else {
         this.render(destination, scale);
+        this.cancelAnimation();
       }
     };
     this.animator = requestAnimationFrame(f);
